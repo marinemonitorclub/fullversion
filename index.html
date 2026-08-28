@@ -258,9 +258,9 @@
     /* === Status Banner === */
     .status-banner {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 1rem;
-      padding: 1.25rem 1.5rem;
+      padding: 1.5rem;
       border-radius: var(--radius-lg);
       margin-bottom: 1.5rem;
       background: var(--color-surface);
@@ -510,7 +510,9 @@
       </div>
       <div class="status-content">
         <h2 id="statusTitle" class="status-title">Cargando condiciones…</h2>
+        <p id="statusTimestamp" style="font-size: 0.75rem; color: var(--color-text-muted); margin: 0.25rem 0;">-</p>
         <p id="statusDetail" class="status-detail">Selecciona una playa para ver los datos meteorológicos</p>
+        <p id="statusReasons" style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.5rem;">-</p>
       </div>
     </section>
 
@@ -987,9 +989,31 @@
 
       const banner = document.getElementById('statusBanner');
       banner.className = `status-banner status-${status.level}`;
+      
+      // Título
       document.getElementById('statusTitle').textContent = statusInfo.title;
-      document.getElementById('statusDetail').textContent =
-        status.reasons.length > 0 ? status.reasons.join(' · ') : statusInfo.detail;
+      
+      // Timestamp y rango de validez
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      const diasText = currentRangeDays === 1 ? '24h' : `${currentRangeDays} días`;
+      document.getElementById('statusTimestamp').textContent = 
+        `✓ CONDICIONES ACTUALES | Válido AHORA (${timeStr}) | Pronóstico próximos ${diasText}`;
+      
+      // Detalle con razones específicas
+      const reasonsText = status.reasons.length > 0 ? status.reasons.join(' • ') : statusInfo.detail;
+      document.getElementById('statusDetail').textContent = reasonsText;
+      
+      // Razones técnicas detalladas
+      const technicalReasons = [];
+      const activity = ACTIVITIES[currentActivity];
+      if (wind <= activity.windThreshold) technicalReasons.push(`Viento ${wind.toFixed(1)} km/h (límite: ${activity.windThreshold})`);
+      if (visibility >= activity.visibilityThreshold) technicalReasons.push(`Visibilidad ${visibility.toFixed(1)} km (mínimo: ${activity.visibilityThreshold})`);
+      if (waveHeight >= (activity.waveMin || 0) && waveHeight <= (activity.waveMax || 10)) technicalReasons.push(`Oleaje ${waveHeight.toFixed(1)} m`);
+      
+      document.getElementById('statusReasons').textContent = 
+        technicalReasons.length > 0 ? `Detalles: ${technicalReasons.join(' | ')}` : '';
+      
       document.getElementById('statusIcon').textContent = getStatusIcon(status.level);
 
       document.getElementById('windSpeed').textContent = wind.toFixed(1);
